@@ -26,6 +26,19 @@ const removeExpense = ({ id } = {}) => ({
   id // now handle this one in the Expensereduce which is responsible for this state change
 });
 
+//action generator for editing expense
+const editExpense = (id, updates) => ({
+  type: "EDIT_EXPENSE",
+  id,
+  updates
+});
+
+//action creator for setting the text field // text is default to empty string if none is passed
+const setTextFilter = (text = "") => ({
+  type: "SET_TEXT_FILTER",
+  text
+});
+
 //we need two reducers to manage the state (one for the expenses array, other is for filters object)
 
 //we need to provide the default state for the expense reducer
@@ -33,6 +46,7 @@ const removeExpense = ({ id } = {}) => ({
 const expensesReducerDefaultState = [];
 
 //Expenses Reducer
+// here state only contains the expense array
 const expensesReducer = (state = expensesReducerDefaultState, action) => {
   switch (action.type) {
     case "ADD_EXPENSE":
@@ -45,6 +59,20 @@ const expensesReducer = (state = expensesReducerDefaultState, action) => {
       // we are destructuring the expense object and getting the id
       return state.filter(({ id }) => {
         return id !== action.id; // here action.id is given by dispatching action with the id
+      });
+
+    case "EDIT_EXPENSE":
+      // here the state constains only the expense array
+      return state.map(expense => {
+        if (expense.id === action.id) {
+          // returning the new object
+          return {
+            ...expense,
+            ...action.updates // this is the new update object
+          };
+        } else {
+          return expense; // return state
+        }
       });
     default:
       return state;
@@ -63,6 +91,11 @@ const filterReducerDefaultState = {
 //create the reducer
 const filtersReducer = (state = filterReducerDefaultState, action) => {
   switch (action.type) {
+    case "SET_TEXT_FILTER":
+      return {
+        ...state,
+        text: action.text
+      };
     default:
       return state;
   }
@@ -90,6 +123,7 @@ store.subscribe(() => {
 // this is going to dispatch to both reducers (expenseReducer & filterReducer)
 // here default case will be running for filterReducer & in expenseReducer switch statement will handle this one
 // dispatching an action object returns an object & we can store that to get the id provided
+// the returned object contains the action object from the action creator ( the object field contains type and expense field mentioned in the action creator)
 const expense1 = store.dispatch(
   addExpense({ description: "Rent", amount: 100 })
 );
@@ -97,8 +131,19 @@ const expense2 = store.dispatch(
   addExpense({ description: "Coffee", amount: 300 })
 );
 
-//dispatching action object
+//watching the return value from expense1
+// console.log(expense1);
+
+//removing the 1st expense
 store.dispatch(removeExpense({ id: expense1.expense.id }));
+
+// editing the second expense object
+store.dispatch(editExpense(expense2.expense.id, { amount: 500 })); // the amount is sent inside an object for easily changing the previous object with the new value using the spread syntax
+
+// adding the text for the filter text
+store.dispatch(setTextFilter("rent"));
+// Setting again the text input to empty string
+store.dispatch(setTextFilter());
 
 //This is the state of the application
 const demoState = {
